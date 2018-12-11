@@ -1,0 +1,16 @@
+{
+  "name": "EasyDBServer",
+  "version": "0.0.1",
+  "dependencies": {
+    "body-parser": "latest",
+    "cookie-parser": "latest",
+    "debug": "latest",
+    "express": "latest",
+    "express-ws": "^4.0.0",
+    "fast-json-patch": "^2.0.7",
+    "morgan": "latest"
+  },
+  "devDependencies": {
+    "@types/node": "^10.12.12"
+  }
+}
