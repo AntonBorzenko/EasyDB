@@ -4,8 +4,11 @@
 /server/easy-db-lib/**/*.js
 /server/app-patcher.js
 /shared/**/*.js
+/client/**/.js
 
 /data.json
 package-lock.json
 
 /test.js
+
+/dist/test.html

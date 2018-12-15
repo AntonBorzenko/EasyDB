@@ -10,8 +10,7 @@ export class ConnectionsHandler {
         return this._connections;
     }
     getConnectionsArray(): any[] {
-        // noinspection TypeScriptUnresolvedFunction
-        return Object.values(this._connections);
+        return Object.keys(this._connections).map(key => this._connections[key]);
     }
     remove(id: number): boolean {
         if (id in this._connections) {

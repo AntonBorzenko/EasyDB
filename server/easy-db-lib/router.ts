@@ -14,8 +14,8 @@ router.get('/data', prepareExpressAnswer(async (): Promise<object> => {
 }));
 
 router.post('/data', prepareExpressAnswer(async (req): Promise<ExpressResult> => {
-    let data = req.body.data;
-    if (data === null || data === undefined) {
+    let data = req.body;
+    if (!data) {
         throw new ExpressError('parameter "data" is not found', 400);
     }
     let result = await easyDb.setData(data);
@@ -23,7 +23,7 @@ router.post('/data', prepareExpressAnswer(async (req): Promise<ExpressResult> =>
     return new ExpressResult(undefined, 201);
 }));
 
-router.put('/data', prepareExpressAnswer(async (req): Promise<ExpressResult> => {
+router.post('/dataUpdates', prepareExpressAnswer(async (req): Promise<ExpressResult> => {
     let updates: Operation[] = req.body.updates;
     if (!Array.isArray(updates)) {
         throw new ExpressError("Parameter 'updates' is not defined", 400);
