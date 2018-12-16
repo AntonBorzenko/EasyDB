@@ -18,7 +18,7 @@ router.post('/data', prepareExpressAnswer(async (req): Promise<ExpressResult> =>
     if (!data) {
         throw new ExpressError('parameter "data" is not found', 400);
     }
-    let result = await easyDb.setData(data);
+    await easyDb.setData(data);
 
     return new ExpressResult(undefined, 201);
 }));
@@ -38,6 +38,7 @@ router.post('/dataUpdates', prepareExpressAnswer(async (req): Promise<ExpressRes
 if (router.ws) {
     debug('WebSocket support is enabled');
     let connectionsHandler = new ConnectionsHandler();
+    // noinspection JSUnusedLocalSymbols
     router.ws('/updates', (ws, req) => {
         let wsId: number = connectionsHandler.add(ws);
         ws.on('close', function () {

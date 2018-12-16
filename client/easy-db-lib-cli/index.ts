@@ -1,9 +1,12 @@
 import EasyDb from "./easy-db";
+import EasyDbModel from "./easy-db-model";
 
 declare global {
     interface Window {
-        EasyDb : EasyDb
+        EasyDb : typeof EasyDb,
+        EasyDbModel: typeof EasyDbModel
     }
 }
 
-window.EasyDb = require('./easy-db').default;
+window.EasyDb = EasyDb;
+window.EasyDbModel = EasyDbModel;
