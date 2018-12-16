@@ -29,15 +29,15 @@ export default class EasyDbModel {
     }
 
     private static _storageName: string;
+    private static _storageNameObject: typeof EasyDbModel;
 
-    static get storageName(): string {
-        if (!this._storageName) {
-            if (this.name === 'EasyDbModel') {
-                this._storageName = 'default';
-            }
-            else {
-                this._storageName = this.name.toLowerCase().replace('model', '');
-            }
+    static getStorageName(): string {
+        if (this._storageNameObject !== this) {
+            this._storageName =
+                this.name === EasyDbModel.name
+                    ? 'default'
+                    : this.name.toLowerCase().replace('model', '');
+            this._storageNameObject = this;
         }
         return this._storageName;
     }
@@ -47,13 +47,13 @@ export default class EasyDbModel {
         if (!data.m) {
             data.m = {};
         }
-        if (!data.m[this.storageName]) {
-            data.m[this.storageName] = <ModelStorage>{
+        if (!data.m[this.getStorageName()]) {
+            data.m[this.getStorageName()] = <ModelStorage>{
                 nextId : 1,
                 obj: {}
             };
         }
-        return data.m[this.storageName];
+        return data.m[this.getStorageName()];
     }
 
     static getAll(edb?: EasyDb): EasyDbModel[] {
@@ -62,13 +62,7 @@ export default class EasyDbModel {
             .map(id => {
                 return storage.obj[id];
             })
-            .map(obj => this._objToModel(obj));
-    }
-
-    protected static _objToModel(obj: object):EasyDbModel {
-        obj = deepClone(obj);
-        obj['__proto__'] = this.prototype;
-        return <EasyDbModel>obj;
+            .map(obj => new this(obj));
     }
 
     static find(query: (EasyDbModel) => boolean, edb?: EasyDb): EasyDbModel {
@@ -88,7 +82,6 @@ export default class EasyDbModel {
             }
         }
         Model.prototype.constructor = Model;
-        (<any>Model).storageName = name.toLowerCase().replace('model', '');
         Object.defineProperty(Model, 'name', {
             value: name,
             writable: false,
@@ -97,7 +90,7 @@ export default class EasyDbModel {
         Object.defineProperty(Model, 'edb', {
             get : () => EasyDbModel.edb
         });
-        let exclude = ['name', 'edb', '_edb', 'storageName', '_storageName'];
+        let exclude = ['edb', '_edb'];
         for (let key in EasyDbModel) {
             if (EasyDbModel.hasOwnProperty(key) && exclude.indexOf(key) === -1) {
                 Model[key] = EasyDbModel[key];

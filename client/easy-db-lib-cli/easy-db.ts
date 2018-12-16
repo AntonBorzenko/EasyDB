@@ -4,6 +4,7 @@ import * as jsonpatch from 'fast-json-patch';
 import {Observer} from "fast-json-patch/lib/core";
 import {Operation} from "fast-json-patch";
 import Timeout = NodeJS.Timeout;
+import EasyDbModel from "./easy-db-model";
 
 
 class EventTrigger {
@@ -235,6 +236,7 @@ export class EasyDbDataContainer extends EventTrigger {
 export interface EasyDbOptions {
     autoInit?: boolean,
     shouldSubscribe?: true,
+    setAsDefault?: true,
     onInit?: () => void,
     onError?: (error) => void,
     onSetData?: (oldData: object, newData: object) => void,
@@ -292,6 +294,7 @@ export default class EasyDb extends EventTrigger {
             autoInit : true,
             shouldSubscribe: true,
             syncTime: 1000,
+            setAsDefault: true
         }, options);
 
         this.easyDbConn = new EasyDbConnection(url);
@@ -304,7 +307,7 @@ export default class EasyDb extends EventTrigger {
         this.shouldSubscribe = options.shouldSubscribe;
 
         for (let event of ['onInit', 'onError', 'onSetData', 'onUpdateData', 'onChangeData', 'onSave']) {
-            if (options[event]) {
+            if (options[event])  {
                 let eventName = event[2].toLowerCase() + event.substr(3); // for example 'onInit' => 'init'
                 this.on(eventName, options[event]);
             }
@@ -313,6 +316,10 @@ export default class EasyDb extends EventTrigger {
         if (options.autoInit) {
             // noinspection JSIgnoredPromiseFromCall
             this.init();
+        }
+
+        if (options.setAsDefault) {
+            EasyDbModel.setEasyDb(this);
         }
     }
 
