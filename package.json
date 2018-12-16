@@ -19,6 +19,7 @@
     "webpack-cli": "^3.1.2"
   },
   "scripts": {
-    "build-client": "webpack --config ./webpack.config.js --mode=development"
+    "build-client": "webpack --config ./webpack.config.js --mode=development",
+    "start-serv": "node ./bin/easy-db-server"
   }
 }

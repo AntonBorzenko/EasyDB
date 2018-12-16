@@ -7,6 +7,6 @@ module.exports = {
         debug : true,
     },
     app : {
-        port : 3000
+        port : 80
     }
 };
