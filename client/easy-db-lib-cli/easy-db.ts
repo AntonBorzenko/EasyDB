@@ -56,13 +56,13 @@ export class EasyDbConnection extends EventTrigger {
         this.trigger('disconnect');
     }
 
-    _onMessage(message): void {
+    _onMessage(messageEvent: MessageEvent): void {
         let messageObject: EasyDbMessage;
         try {
-             messageObject = JSON.parse(message);
+             messageObject = JSON.parse(messageEvent.data);
         }
         catch (e) {
-            throw new Error(`Message "${message}" can not be parsed as object`);
+            throw new Error(`Message "${messageEvent.data}" can not be parsed as object`);
         }
 
         switch (messageObject.method) {
@@ -143,7 +143,7 @@ export class EasyDbConnection extends EventTrigger {
     }
 
     async sendUpdates(updates: Operation[], previousHash?: number): Promise<void> {
-        let result = await request(`${this.url}data`, { updates, previousHash }, 'POST' );
+        let result = await request(`${this.url}dataUpdates`, { updates, previousHash }, 'POST' );
         if (!result || !result.status) {
             throw new Error(`Data cannot be updated`);
         }
@@ -223,14 +223,12 @@ export class EasyDbDataContainer extends EventTrigger {
         });
     }
 
-    applyUpdates(updates: Operation[]): EasyDbDataContainer {
-        let result = jsonpatch.applyPatch(
+    applyUpdates(updates: Operation[]): object {
+        return jsonpatch.applyPatch(
             jsonpatch.deepClone(this._data),
             jsonpatch.deepClone(updates),
             true
         ).newDocument;
-
-        return new EasyDbDataContainer(result);
     }
 }
 
@@ -307,7 +305,7 @@ export default class EasyDb extends EventTrigger {
 
         for (let event of ['onInit', 'onError', 'onSetData', 'onUpdateData', 'onChangeData', 'onSave']) {
             if (options[event]) {
-                let eventName = event[0].toLowerCase() + event.substr(3); // for example 'onInit' => 'init'
+                let eventName = event[2].toLowerCase() + event.substr(3); // for example 'onInit' => 'init'
                 this.on(eventName, options[event]);
             }
         }
@@ -318,9 +316,18 @@ export default class EasyDb extends EventTrigger {
         }
     }
 
-    private _dataChanged() {
+    private _dataChanged(): void {
         this.isSynced = false;
         this._syncTimer.start();
+    }
+
+    private _setNewData(data: object): void {
+        if (this._dataCnt) {
+            this._dataCnt.unobserve();
+        }
+        this._dataCnt = new EasyDbDataContainer(data);
+        this._dataCnt.on('set', () => this._dataChanged());
+        this._dataCnt.on('update', () => this._dataChanged());
     }
 
     async init(): Promise<void> {
@@ -333,10 +340,7 @@ export default class EasyDb extends EventTrigger {
             this.trigger('error', errorMessage);
             throw new Error(errorMessage);
         }
-        this._dataCnt = new EasyDbDataContainer(data);
-        //// events set(oldData, newData), update(newData, updates)
-        this._dataCnt.on('set', () => this._dataChanged());
-        this._dataCnt.on('update', () => this._dataChanged());
+        this._setNewData(data);
 
         if (this.shouldSubscribe) {
             try {
@@ -354,18 +358,17 @@ export default class EasyDb extends EventTrigger {
 
             // noinspection JSUnusedLocalSymbols
             this.easyDbConn.on('setData', (data: object, previousHash?: number) => {
-                this._dataCnt.unobserve();
                 let previousData = this._dataCnt.data;
-                this._dataCnt = new EasyDbDataContainer(data);
+                this._setNewData(data);
                 this.trigger('setData', previousData, this._dataCnt.data);
                 this.trigger('changeData', previousData, this._dataCnt.data);
             });
 
             // noinspection JSUnusedLocalSymbols
             this.easyDbConn.on('updateData', (updates: Operation[], previousHash) => {
-                this._dataCnt.unobserve();
+
                 let previousData = this._dataCnt.data;
-                this._dataCnt = this._dataCnt.applyUpdates(updates);
+                this._setNewData(this._dataCnt.applyUpdates(updates));
 
                 this.trigger('updateData', previousData, this._dataCnt.data, updates);
                 this.trigger('changeData', previousData, this._dataCnt.data);
@@ -421,127 +424,3 @@ export default class EasyDb extends EventTrigger {
         this._dataCnt.data = data;
     }
 }
-
-
-
-/*
-
-export interface EasyDbConnectionSettings {
-    connectByDefault: boolean,
-    subscribeByDefault: boolean,
-    onConnect: Function,
-    onSubscribe: Function,
-    onChange: Function,
-    onReset: Function,
-    onUpdate: Function,
-    onError: Function,
-    onLocalModification: Function,
-}
-
-export default class EasyDbConnection {
-    url: string;
-    options: EasyDbConnectionSettings;
-    private _data: object = null;
-    isConnected: boolean = false;
-    isSubscribed: boolean = false;
-    observer: Observer<object> = null;
-    ws: WebSocket = null;
-
-    constructor(url: string, options: EasyDbConnectionSettings) {
-        options = Object.assign({}, {
-            connectByDefault : true,
-            subscribeByDefault : true,
-        }, options);
-
-        this.url = url[url.length - 1] === '/' ? url : url + '/';
-        this.options = options;
-
-        if (this.options.connectByDefault) {
-            this.connect()
-                .then((result: boolean) => {
-                    if (!result) {
-                        throw new Error(`EasyDb can not be connected to ${this.url}`);
-                    }
-                    if (this.options.subscribeByDefault) {
-                        return this.subscribe().then((result: boolean) => {
-                            throw new Error(`EasyDb can not be subscribed to server`);
-                        });
-                    }
-                });
-        }
-    }
-    getData(): object {
-        if (this._data === null) {
-            throw new Error(`Data is not loaded`);
-        }
-        return this._data;
-    }
-    async setData(data: object): Promise<boolean> {
-        try {
-            let previousHash = easyDbHashFunction(this._data);
-            let result = await request(this.url + 'data', {data, previousHash}, 'POST');
-            if (!result || !result.success) {
-                return false;
-            }
-        }
-        catch (e) {
-            return false;
-        }
-        this._data = data;
-        return true;
-    }
-
-    get data(): object {
-        return this.getData();
-    }
-    set data(value: object) {
-        this.setData(value).then(result => {
-            if (!result) {
-                throw new Error(`data is not updated`);
-            }
-        });
-    }
-    _onDataUpdate(updates) {
-        this.updates =
-    }
-    async connect(): Promise<boolean> {
-        let result = await request(this.url + 'data');
-        if (result.success !== true || !result.data) {
-            return false;
-        }
-        // TODO add lib
-        this._data = result.data;
-        this.observer = jsonpatch.observe(this._data, this._onDataUpdate.bind(this));
-        this.isConnected = true;
-        if (this.options.onConnect) {
-            this.options.onConnect();
-        }
-        return true;
-    }
-    subscribe(): Promise<boolean> {
-        return new Promise((resolve, reject) => {
-            let resolved: boolean = false;
-            let ws = new WebSocket(this.url + 'updates');
-            ws.onopen = () => {
-                if (resolved) return;
-                resolved = true;
-
-                this._onWebSocketConnection(ws);
-
-                resolve(true);
-            };
-            ws.onclose = ws.onerror = () => {
-                if (resolved) return;
-                resolved = true;
-                resolve(false);
-            };
-        });
-    }
-    private _onMessage(message) {
-        // TODO
-    }
-    private _onWebSocketConnection(ws: WebSocket) {
-        if (this.options) {}
-        // TODO
-    }
-}*/

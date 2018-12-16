@@ -46,8 +46,9 @@ if (router.ws) {
     });
 
     easyDb.onUpdate((type, data, previousHash) => {
+        let message = JSON.stringify({ method : type, data, previousHash });
         connectionsHandler.getConnectionsArray().forEach(ws => {
-            ws.send(JSON.stringify({ method : type, data, previousHash }));
+            ws.send(message);
         });
     });
 }
