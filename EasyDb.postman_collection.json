@@ -1,0 +1,88 @@
+{
+	"info": {
+		"_postman_id": "9da764dd-480a-4027-aff6-3f98c96a2faa",
+		"name": "EasyDb",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Get data",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {},
+				"url": {
+					"raw": "http://localhost:3000/easy-db/data",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"easy-db",
+						"data"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Set data",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"hello\":\"world\"}"
+				},
+				"url": {
+					"raw": "http://localhost:3000/easy-db/data",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"easy-db",
+						"data"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Update data",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\"updates\":[{ \"op\": \"add\", \"path\": \"/hello1\", \"value\": \"world\"}, { \"op\": \"add\", \"path\": \"/hello2\", \"value\": \"world\"}]}"
+				},
+				"url": {
+					"raw": "http://localhost:3000/easy-db/dataUpdates",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "3000",
+					"path": [
+						"easy-db",
+						"dataUpdates"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
