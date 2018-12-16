@@ -1,0 +1,24 @@
+{
+  "name": "EasyDBServer",
+  "version": "0.0.1",
+  "dependencies": {
+    "@webpack-cli/init": "^0.1.2",
+    "body-parser": "latest",
+    "cookie-parser": "latest",
+    "debug": "latest",
+    "express": "latest",
+    "express-ws": "^4.0.0",
+    "fast-json-patch": "^2.0.7",
+    "morgan": "latest",
+    "ts-loader": "^5.3.1",
+    "typescript": "^3.2.2",
+    "webpack": "^4.27.1"
+  },
+  "devDependencies": {
+    "@types/node": "^10.12.12",
+    "webpack-cli": "^3.1.2"
+  },
+  "scripts": {
+    "build-client": "webpack --config ./webpack.config.js --mode=development"
+  }
+}
